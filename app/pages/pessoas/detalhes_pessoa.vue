@@ -52,7 +52,7 @@
                       <div class="card-body">
                         <ul id="lista" class="list-group mb-2">
                           <li v-for="promocao in pessoa.promocoes" :key="promocao.id" class="list-group-item">
-                            {{ promocao.data_formatada }} - {{ promocao.nome_graduacao }}
+                            {{ promocao.data }} - {{ promocao.nome_graduacao }}
                           </li>
                       </ul>
                     </div>
@@ -94,9 +94,10 @@ const pessoa =  {
     aniversario: data.value?.doc?.aniversario || 'N/A',
     situacao: data.value?.doc?.situacao,
     cpf: data.value?.doc?.cpf || 'N/A',
-    tipo: data.value?.doc?.tipo,
-    dojo: data.value?.doc?.dojo?.[0]?.nome || 'N/A',
-    graduacao: data.value?.doc?.graduacao?.[0]?.nome || 'N/A',
+    tipo: data.value?.doc?.tipo.charAt(0).toUpperCase() 
+                                + data.value?.doc?.tipo.slice(1),
+    dojo: data.value?.doc?.dojo?.nome || 'N/A',
+    graduacao: data.value?.doc?.graduacao?.nome || 'N/A',
     promocoes: data.value?.doc?.promocoes || []
 };
 

@@ -89,11 +89,13 @@
                   <pre>{{ data }}</pre>
                   -->
                   <ul id="lista" class="list-group mb-2">
-                    <li v-for="pessoa in pessoasFiltradas" :key="pessoa._id" class="list-group-item">
+                    <li v-for="pessoa in pessoasFiltradas" :key="pessoa.id" class="list-group-item">
                       <h5>{{ pessoa.nome }}</h5>
                       <p class="fs-6 text-secondary">
-                        {{ pessoa.matricula }} | {{ pessoa.graduacao?.[0]?.nome }}
-                        | {{ pessoa.situacao }} | {{ pessoa.aniversario }} | {{ pessoa.dojo?.[0]?.nome }}
+                        {{ pessoa.matricula?pessoa.matricula:'N/A' }} | 
+                        {{ pessoa.graduacao?.nome }}
+                        | {{ pessoa.situacao }} | {{ pessoa.aniversario }} | 
+                        {{ pessoa.dojo?.nome?pessoa.dojo?.nome:'N/A' }}
                       </p>
                       <div>
                           Ações: 
@@ -101,7 +103,7 @@
                             id="bota_detalhes_pessoa" 
                             name="botao_detalhes_pessoa" 
                             class="btn btn-primary btn-sm m-1" 
-                            :to="`/pessoas/detalhes_pessoa?id=${pessoa._id}`">
+                            :to="`/pessoas/detalhes_pessoa?id=${pessoa.id}`">
                             Detalhes
                           </nuxt-link>
 
@@ -109,7 +111,7 @@
                             id="bota_editar_pessoa" 
                             name="botao_editar_pessoa" 
                             class="btn btn-primary btn-sm m-1" 
-                            :to="`/pessoas/edita_pessoa?id=${pessoa._id}`">
+                            :to="`/pessoas/edita_pessoa?id=${pessoa.id}`">
                             Edita
                           </nuxt-link>
                       </div>
@@ -125,6 +127,8 @@
 </template>
 
 <script setup lang="ts">
+import type IPessoa from '~~/shared/types/IPessoa';
+
 
 // Verifica se esta logado
 definePageMeta({
@@ -171,11 +175,10 @@ const endpoint = computed(() => {
 
 // Busca os dados através da API route do servidor
 // O watch: ['endpoint'] faz o refetch automático quando a rota mudar
-const { data, pending, error, refresh } = await useFetch(endpoint, {
+const { data, pending, error, refresh } = await useFetch<{ docs: any }>(endpoint, {
   watch: [endpoint]
 })
 
-// Computed para o título do filtro aplicado
 // Computed para o título do filtro aplicado
 const tituloFiltro = computed(() => {
   const query = route.query;
@@ -187,9 +190,6 @@ const tituloFiltro = computed(() => {
   
   return 'Todas as pessoas';
 });
-
-// Busca os dados através da API route do servidor
-//const { data, pending, error, refresh } = await useFetch('/api/pessoas');
 
 // Variável reativa para o filtro
 const filtro = ref('');
@@ -206,10 +206,10 @@ const pessoasFiltradas = computed(() => {
     const textoCompleto = [
       pessoa.nome,
       pessoa.matricula,
-      pessoa.graduacao?.[0]?.nome,
+      pessoa.graduacao?.nome,
       pessoa.situacao,
       pessoa.aniversario,
-      pessoa.dojo?.[0]?.nome
+      pessoa.dojo?.nome
     ].join(' ').toLowerCase();
     
     return textoCompleto.includes(valorFiltro);

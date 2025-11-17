@@ -4,22 +4,21 @@
       <div class="card-header fw-bold">{{ title }}</div>
       <div class="card-body">
         <form id="formulario" @submit.prevent="grava">
-          <input type="hidden" id="id" name="id" v-model="pessoa._id" />
-          <input type="hidden" id="total_promocoes" :value="pessoa.promocoes?.length || 0" />
 
-            <!-- Info Alert -->
-            <div class="alert alert-info alert-dismissible fade show">
-              <strong>Info!</strong> O '*'' indica os campos obrigatórios.
-              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
+          <!-- Info Alert -->
+          <div class="alert alert-info alert-dismissible fade show">
+            <strong>Info!</strong> O '*'' indica os campos obrigatórios.
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>
 
-            <div v-if="localMessage" :class="['alert', localMessageType === 'error' ? 'alert-danger' : localMessageType === 'success' ? 'alert-success' : 'alert-info', 'alert-dismissible']">
-              <strong v-if="localMessageType === 'error'">Erro:</strong>
-              <strong v-else-if="localMessageType === 'success'">Ok:</strong>
-              <strong v-else>Info:</strong>
-              <span class="ms-1">{{ localMessage }}</span>
-              <button type="button" class="btn-close" @click="localMessage = ''" aria-label="Fechar"></button>
-            </div>
+          <!-- Mensagens -->
+          <div v-if="localMessage" :class="['alert', localMessageType === 'error' ? 'alert-danger' : localMessageType === 'success' ? 'alert-success' : 'alert-info', 'alert-dismissible']">
+            <strong v-if="localMessageType === 'error'">Erro:</strong>
+            <strong v-else-if="localMessageType === 'success'">Ok:</strong>
+            <strong v-else>Info:</strong>
+            <span class="ms-1">{{ localMessage }}</span>
+            <button type="button" class="btn-close" @click="localMessage = ''" aria-label="Fechar"></button>
+          </div>
 
           <!-- Nome -->
           <div class="form-group row mb-3">
@@ -66,7 +65,7 @@
               <select
                 v-else
                 id="graduacao_atual" name="graduacao_atual"
-                v-model="pessoa.id_graduacao" class="form-select">
+                v-model="pessoa.graduacao._id" class="form-select">
                 <option value="">Selecione...</option>
                 <option v-for="item in items" :key="item.value" 
                 :value="item.value">
@@ -79,7 +78,7 @@
           <!--Situacao-->
           <div class="form-group row mb-3">
             <div class="col-2">
-              <label for="situacao" class="form-label">Situação</label>
+              <label for="situacao" class="form-label">*Situação</label>
             </div>
             <div class="col-2">
               <select id="situacao" name="situacao" v-model="pessoa.situacao" 
@@ -133,7 +132,7 @@
           <!--Tipo-->
           <div class="form-group row mb-3">
             <div class="col-2">
-              <label for="tipo" class="form-label">Tipo</label>
+              <label for="tipo" class="form-label">*Tipo</label>
             </div>
             <div class="col-2">
               <select id="tipo" name="tipo" v-model="pessoa.tipo" 
@@ -156,7 +155,7 @@
                   <div v-if="pendingDojos">Carregando...</div>
                   <select
                     v-else
-                    id="dojo" name="dojo" v-model="pessoa.id_dojo"
+                    id="dojo" name="dojo" v-model="pessoa.dojo!._id"
                     class="form-select">
                     <option value="">Selecione...</option>
                     <option v-for="item in itemsDojos" :key="item.value" 
@@ -192,7 +191,7 @@
                       :name="`data_promocao_${index + 1}`" 
                       type="text" 
                       class="form-control" 
-                      :value="promocao.data_formatada"/>
+                      v-model="promocao.data"/>
                   </div>
                 
                   <div class="col-2">
@@ -206,7 +205,7 @@
                       class="form-select" 
                       aria-label="Graduação" 
                       required
-                      :value="promocao.id_graduacao"      >
+                      v-model="promocao.id_graduacao">
                       <option value="" selected>Selecione</option>
                       <option v-for="item in items" :key="item.value" 
                             :value="item.value">
@@ -242,6 +241,7 @@
 
 <script setup lang="ts">
 import { reactive, ref, computed } from 'vue'
+import type IPessoa from '../../../shared/types/IPessoa';
 
 definePageMeta({
   middleware: ['authenticated']
@@ -254,46 +254,32 @@ const id = (query.id as string) || '';
 const title = id ? 'Edita Pessoa' : 'Nova Pessoa';
 
 // Pessoa type
-interface Pessoa {
-  _id?: string
-  nome: string
-  matricula?: string
-  aniversario?: string
-  situacao?: string
-  cpf?: string
-  tipo?: string
-  dojo?: string
-  id_dojo?: string
-  data_inicio_aikido?: string
-  data_matricula?: string
-  id_graduacao?: string
-  graduacao?: string
-  promocoes?: {
-      data: Date,
-      id_graduacao: string,
-      data_formatada?: string,
-      nome_graduacao?: string
-  }[]
-}
 
 // Reactive pessoa object
-const pessoa = reactive<Pessoa>({
-  _id: '',
+const pessoa = reactive<IPessoa>({
+  id: '',
   nome: '',
   matricula: '',
   aniversario: '',
   situacao: '',
   cpf: '',
   tipo: '',
-  dojo: '',
-  id_dojo: '',
+  dojo: {
+    _id: '',
+    nome: ''
+  },
   data_inicio_aikido: '',
   data_matricula: '',
-  id_graduacao: '',
-  graduacao: '',
+  graduacao: {
+    _id: '',
+    nome: '',
+    faixa: '',
+    sequencia: 0
+  },
   promocoes: []
 });
 
+// Busca os dados somente na alteracao (id != null)
 if (id) {
   const pessoaEndpoint = computed(() => `/api/pessoas/${id}`);
   const { data: pessoaData } = await useFetch<{ doc: any }>(pessoaEndpoint, 
@@ -352,6 +338,10 @@ function showMessage(text: string, type: 'success' | 'error' | 'info' = 'info') 
   setMensagem(text, type === 'error' ? 'error' : 'success');
 }
 
+//
+// Validacoes
+//
+
 function isValidCPF(cpf = '') {
   if (!cpf) return true;
   const re = /^\d{3}\.\d{3}\.\d{3}-\d{2}$/;
@@ -364,15 +354,27 @@ function isValidDateDDMM(s = '') {
   return re.test(s);
 }
 
+//
 // Função para gravar a pessoa
+//
 async function grava() {
   if (!pessoa.nome || pessoa.nome.trimStart() === '') {
     showMessage('Preencha o campo obrigatório: nome.', 'error');
     return;
   }
 
-  if (!pessoa.id_graduacao || pessoa.id_graduacao === '') {
+  if (!pessoa.graduacao._id || pessoa.graduacao._id === '') {
     showMessage('Preencha o campo obrigatório: graduação.', 'error');
+    return;
+  }
+
+  if (!pessoa.tipo || pessoa.tipo === '') {
+    showMessage('Preencha o campo obrigatório: tipo.', 'error');
+    return;
+  }
+
+  if (!pessoa.situacao || pessoa.situacao === '') {
+    showMessage('Preencha o campo obrigatório: situação.', 'error');
     return;
   }
 
@@ -388,8 +390,8 @@ async function grava() {
     return;
   }
 
-  const endpoint = pessoa._id ? `/api/pessoas/${pessoa._id}` : '/api/pessoas';
-  const method = pessoa._id ? 'PUT' : 'POST';
+  const endpoint = pessoa.id ? `/api/pessoas/${pessoa.id}` : '/api/pessoas';
+  const method = pessoa.id ? 'PATCH' : 'POST';
 
   try {
     isSaving.value = true;
@@ -408,7 +410,9 @@ async function grava() {
   }
 }
 
+//
 // Função para adicionar nova promoção
+//
 const adicionarPromocao = () => {
   // Inicializa o array se não existir
   if (!pessoa.promocoes) {
@@ -416,13 +420,14 @@ const adicionarPromocao = () => {
   }
   
   pessoa.promocoes.push({
-    data: new Date(),
-    data_formatada: '',
+    data: '',
     id_graduacao: ''
   })
 }
 
+//
 // Função para remover promoção
+//
 const removerPromocao = (index: number) => {
   pessoa?.promocoes?.splice(index, 1)
 }

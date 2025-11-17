@@ -6,7 +6,7 @@ export default defineEventHandler(async (event): Promise<RespostaPessoas> => {
 
     try {
         const dados = await getPessoaById(id);
-        return dados;
+        return dados.doc ? dados : Promise.reject(new Error('Pessoa não encontrada'));
     } catch (error: any) {
         // Se receber 401, invalida o token e tenta novamente
         if (error?.statusCode === 401) {
@@ -15,7 +15,7 @@ export default defineEventHandler(async (event): Promise<RespostaPessoas> => {
         try {
             const dados = await getPessoaById(id);
 
-            return dados;
+            return dados.doc ? dados : Promise.reject(new Error('Pessoa não encontrada após renovação do token'));
         } catch (retryError) {
             throw createError({
             statusCode: 500,
